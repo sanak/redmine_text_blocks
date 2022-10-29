@@ -32,17 +32,17 @@ jobs:
           { repo: redmica, version: stable-2.1 },
           { repo: redmica, version: master },
         ]
-        ruby_version: [2.6, 2.7, 3.0, 3.1]
+        ruby_version: ['2.6', '2.7', '3.0', '3.1']
         db: [mysql, postgres, sqlite]
         exclude:
           - redmine: { repo: redmine, version: 4.2-stable }
-            ruby_version: 3.0
+            ruby_version: '3.0'
           - redmine: { repo: redmine, version: 4.2-stable }
-            ruby_version: 3.1
+            ruby_version: '3.1'
           - redmine: { repo: redmica, version: stable-2.0 }
-            ruby_version: 3.0
+            ruby_version: '3.0'
           - redmine: { repo: redmica, version: stable-2.0 }
-            ruby_version: 3.1
+            ruby_version: '3.1'
 
     services:
       mysql:
