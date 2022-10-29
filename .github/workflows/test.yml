@@ -103,6 +103,16 @@ jobs:
           apt-get -y update
           apt-get install -y google-chrome-stable
 
+      # - name: Set up chromedriver
+      #   uses: nanasess/setup-chromedriver@v1
+      #   with:
+      #     # Optional: do not specify to match Chrome's version
+      #     chromedriver-version: '88.0.4324.96'
+      #   run: |
+      #     export DISPLAY=:99
+      #     chromedriver --url-base=/wd/hub &
+      #     sudo Xvfb -ac :99 -screen 0 1280x1024x24 > /dev/null 2>&1 & # optional
+
       - name: Verify MySQL connection from host
         if: matrix.db == 'mysql'
         run: |
@@ -140,6 +150,8 @@ jobs:
                 database: db/redmine.sqlite3
           EOF
           fi
+          # Patch
+          sed -i'' -e "s/gem 'puma'$/gem 'puma', '< 6.0.0'/" Gemfile
 
       - name: Install Ruby dependencies
         working-directory: redmine
