@@ -28,8 +28,8 @@ jobs:
           { repo: redmine, version: 4.2-stable },
           { repo: redmine, version: 5.0-stable },
           { repo: redmine, version: master },
-          { repo: redmica, version: 2.0-stable },
-          { repo: redmica, version: 2.1-stable },
+          { repo: redmica, version: stable-2.0 },
+          { repo: redmica, version: stable-2.1 },
           { repo: redmica, version: master },
         ]
         ruby_version: [2.6, 2.7, 3.0, 3.1]
@@ -101,7 +101,7 @@ jobs:
                 username: root
                 password: password
                 encoding: utf8mb4
-            EOF
+          EOF
           fi
           if [ ${{ matrix.db }} = "postgres" ]; then
             cat <<EOF > config/database.yml
@@ -112,14 +112,14 @@ jobs:
                 username: postgres
                 password: postgres
                 encoding: utf8
-            EOF
+          EOF
           fi
           if [ ${{ matrix.db }} = "sqlite" ]; then
             cat <<EOF > config/database.yml
               test:
                 adapter: sqlite3
                 database: db/redmine.sqlite3
-            EOF
+          EOF
           fi
 
       - name: Install Ruby dependencies
