@@ -174,6 +174,7 @@ jobs:
       - name: Run core system tests
         env:
           RAILS_ENV: test
+          GOOGLE_CHROME_OPTS_ARGS: "headless,disable-gpu,no-sandbox,disable-dev-shm-usage"
         working-directory: redmine
         run: bundle exec rake test:system
 
