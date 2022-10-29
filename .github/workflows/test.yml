@@ -24,27 +24,37 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # redmine: [
+        #   { repo: redmine, version: 4.2-stable },
+        #   { repo: redmine, version: 5.0-stable },
+        #   { repo: redmine, version: master },
+        #   { repo: redmica, version: stable-2.0 },
+        #   { repo: redmica, version: stable-2.1 },
+        #   { repo: redmica, version: master },
+        # ]
+        # ruby_version: ['2.6', '2.7', '3.0', '3.1']
+        # db: [mysql, postgres, sqlite]
+        # exclude:
+        #   - redmine: { repo: redmine, version: 4.2-stable }
+        #     ruby_version: '3.0'
+        #   - redmine: { repo: redmine, version: 4.2-stable }
+        #     ruby_version: '3.1'
+        #   - redmine: { repo: redmica, version: stable-2.0 }
+        #     ruby_version: '3.0'
+        #   - redmine: { repo: redmica, version: stable-2.0 }
+        #     ruby_version: '3.1'
         redmine: [
-          { repo: redmine, version: 4.2-stable },
           { repo: redmine, version: 5.0-stable },
-          { repo: redmine, version: master },
-          { repo: redmica, version: stable-2.0 },
-          { repo: redmica, version: stable-2.1 },
-          { repo: redmica, version: master },
         ]
-        ruby_version: ['2.6', '2.7', '3.0', '3.1']
-        db: [mysql, postgres, sqlite]
-        exclude:
-          - redmine: { repo: redmine, version: 4.2-stable }
-            ruby_version: '3.0'
-          - redmine: { repo: redmine, version: 4.2-stable }
-            ruby_version: '3.1'
-          - redmine: { repo: redmica, version: stable-2.0 }
-            ruby_version: '3.0'
-          - redmine: { repo: redmica, version: stable-2.0 }
-            ruby_version: '3.1'
+        ruby_version: ['3.1']
+        db: [sqlite]
 
     services:
+      chrome:
+        image: seleniarm/standalone-chromium:latest
+        options: --shm-size=256m
+        ports:
+          - 4444:4444
       mysql:
         image: mysql:5.7 # min
         # image: mysql:8.0 # latest
@@ -155,6 +165,12 @@ jobs:
           RAILS_ENV: test
         working-directory: redmine
         run: bundle exec rake redmine:plugins:test NAME=${{ env.PLUGIN_NAME }} RUBYOPT="-W0"
+
+      - name: Run core system tests
+        env:
+          RAILS_ENV: test
+        working-directory: redmine
+        run: bundle exec rake test:system
 
       - name: Run uninstall test
         env:
