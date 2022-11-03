@@ -130,8 +130,11 @@ jobs:
                 database: db/redmine.sqlite3
           EOF
           fi
-          # Patch for system test
+          # Patch for core system test
+          # https://www.redmine.org/issues/37867
           sed -i -e "s/gem 'puma'$/gem 'puma', '< 6.0.0'/" Gemfile
+          # https://www.redmine.org/issues/37884
+          sed -i -e "s/gem \"selenium-webdriver\"$/gem 'selenium-webdriver', '~> 3.142.7'/" Gemfile
 
       - name: Install Ruby dependencies
         working-directory: redmine
