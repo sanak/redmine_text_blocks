@@ -39,7 +39,7 @@ jobs:
             redmine: { repo: redmine, version: master }
             ruby_version: '3.1'
             db: mysql
-        exclude:
+        # exclude:
           # - redmine: { repo: redmine, version: 4.2-stable }
           #   ruby_version: '3.0'
           # - redmine: { repo: redmine, version: 4.2-stable }
