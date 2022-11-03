@@ -34,6 +34,11 @@ jobs:
         ]
         ruby_version: ['2.6', '2.7', '3.0', '3.1']
         db: [mysql, postgres, sqlite]
+        include:
+          - system_test: true
+            redmine: { repo: redmine, version: master }
+            ruby_version: '3.1'
+            db: mysql
         exclude:
           - redmine: { repo: redmine, version: 4.2-stable }
             ruby_version: '3.0'
@@ -88,10 +93,12 @@ jobs:
             apt-get install --yes --quiet postgresql-client
           fi
           # For system test
-          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-          sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
-          apt-get -y update
-          apt-get install -y google-chrome-stable
+          if [ ${{ matrix.system_test }} = "true" ]; then
+            wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+            sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+            apt-get -y update
+            apt-get install -y google-chrome-stable
+          fi
 
       - name: Verify MySQL connection from host
         if: matrix.db == 'mysql'
@@ -130,13 +137,16 @@ jobs:
                 database: db/redmine.sqlite3
           EOF
           fi
-          ### Patch for core test ###
+          ### Gem patch for test ###
+          # https://www.redmine.org/issues/37883
           sed -i -e "s/gem 'mocha', '>= 1.4.0'$/gem 'mocha', (Gem.ruby_version < Gem::Version.new('2.7.0') ? ['>= 1.4.0', '< 2.0.0'] : '>= 1.4.0')/" Gemfile
-          ### Patch for core system test ###
-          # https://www.redmine.org/issues/37867
-          sed -i -e "s/gem 'puma'$/gem 'puma', '< 6.0.0'/" Gemfile
-          # https://www.redmine.org/issues/37884
-          sed -i -e "s/gem \"selenium-webdriver\"$/gem 'selenium-webdriver', '~> 3.142.7'/" Gemfile
+          ### Gem patch for system test ###
+          if [ ${{ matrix.system_test }} = "true" ]; then
+            # https://www.redmine.org/issues/37867
+            sed -i -e "s/gem 'puma'$/gem 'puma', '< 6.0.0'/" Gemfile
+            # https://www.redmine.org/issues/37884
+            sed -i -e 's/gem "selenium-webdriver"$/gem "selenium-webdriver", "~> 3.142.7"/' Gemfile
+          fi
 
       - name: Install Ruby dependencies
         working-directory: redmine
@@ -171,10 +181,12 @@ jobs:
       # - name: Run core tests
       #   env:
       #     RAILS_ENV: test
+      #     PARALLEL_WORKERS: 1
       #   working-directory: redmine
       #   run: bundle exec rails test
 
       - name: Run core system tests
+        if: matrix.system_test == 'true'
         env:
           RAILS_ENV: test
           GOOGLE_CHROME_OPTS_ARGS: "headless,disable-gpu,no-sandbox,disable-dev-shm-usage"
