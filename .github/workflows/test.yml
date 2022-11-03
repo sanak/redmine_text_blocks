@@ -130,7 +130,9 @@ jobs:
                 database: db/redmine.sqlite3
           EOF
           fi
-          # Patch for core system test
+          ### Patch for core test ###
+          sed -i -e "s/gem 'mocha', '>= 1.4.0'$/gem 'mocha', (Gem.ruby_version < Gem::Version.new('2.7.0') ? ['>= 1.4.0', '< 2.0.0'] : '>= 1.4.0')/" Gemfile
+          ### Patch for core system test ###
           # https://www.redmine.org/issues/37867
           sed -i -e "s/gem 'puma'$/gem 'puma', '< 6.0.0'/" Gemfile
           # https://www.redmine.org/issues/37884
