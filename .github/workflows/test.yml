@@ -34,6 +34,13 @@ jobs:
         ]
         ruby_version: ['2.6', '2.7', '3.0', '3.1']
         db: [mysql, postgres, sqlite]
+        # # System test takes 2~3 times longer, so limit to specific matrix combinations
+        # # See: https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs#expanding-or-adding-matrix-configurations
+        # include:
+        #   - system_test: true
+        #     redmine: { repo: redmine, version: master }
+        #     ruby_version: '3.1'
+        #     db: mysql
         exclude:
           - redmine: { repo: redmine, version: 4.2-stable }
             ruby_version: '3.0'
@@ -87,6 +94,13 @@ jobs:
           if [ ${{ matrix.db }} = "postgres" ]; then
             apt-get install --yes --quiet postgresql-client
           fi
+          # For system test
+          if [ ${{ matrix.system_test }} = "true" ]; then
+            wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+            sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+            apt-get -y update
+            apt-get install -y google-chrome-stable
+          fi
 
       - name: Verify MySQL connection from host
         if: matrix.db == 'mysql'
@@ -125,6 +139,16 @@ jobs:
                 database: db/redmine.sqlite3
           EOF
           fi
+          ### Gem patch for test ###
+          # https://www.redmine.org/issues/37883
+          sed -i -e "s/gem 'mocha', '>= 1.4.0'$/gem 'mocha', (Gem.ruby_version < Gem::Version.new('2.7.0') ? ['>= 1.4.0', '< 2.0.0'] : '>= 1.4.0')/" Gemfile
+          ### Gem patch for system test ###
+          if [ ${{ matrix.system_test }} = "true" ]; then
+            # https://www.redmine.org/issues/37867
+            sed -i -e "s/gem 'puma'$/gem 'puma', '< 6.0.0'/" Gemfile
+            # https://www.redmine.org/issues/37884
+            sed -i -e 's/gem "selenium-webdriver"$/gem "selenium-webdriver", "~> 3.142.7"/' Gemfile
+          fi
 
       - name: Install Ruby dependencies
         working-directory: redmine
@@ -150,11 +174,28 @@ jobs:
           fi
         shell: bash
 
-      - name: Run tests
+      - name: Run plugin tests
         env:
           RAILS_ENV: test
+          # For system test in plugin
+          GOOGLE_CHROME_OPTS_ARGS: "headless,disable-gpu,no-sandbox,disable-dev-shm-usage"
         working-directory: redmine
         run: bundle exec rake redmine:plugins:test NAME=${{ env.PLUGIN_NAME }} RUBYOPT="-W0"
+
+      # - name: Run core tests
+      #   env:
+      #     RAILS_ENV: test
+      #     PARALLEL_WORKERS: 1
+      #   working-directory: redmine
+      #   run: bundle exec rake test
+
+      # - name: Run core system tests
+      #   if: matrix.system_test == true
+      #   env:
+      #     RAILS_ENV: test
+      #     GOOGLE_CHROME_OPTS_ARGS: "headless,disable-gpu,no-sandbox,disable-dev-shm-usage"
+      #   working-directory: redmine
+      #   run: bundle exec rake test:system
 
       - name: Run uninstall test
         env:
